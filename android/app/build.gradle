@@ -22,7 +22,7 @@ android {
 
 defaultConfig {
     applicationId = "com.example.brightsprings_ads"
-    minSdk = 23   // 🔥 Force override to 23
+    minSdk = 24   // 🔥 Force override to 24
     targetSdk = flutter.targetSdkVersion
     versionCode = flutter.versionCode
     versionName = flutter.versionName

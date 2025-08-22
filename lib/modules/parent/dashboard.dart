@@ -359,7 +359,7 @@ class _ParentDashboardState extends State<ParentDashboard>
       case 3:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => TrainingVideosScreen()),
+          MaterialPageRoute(builder: (_) => VideosScreen()),
         );
         break;
       case 4:
