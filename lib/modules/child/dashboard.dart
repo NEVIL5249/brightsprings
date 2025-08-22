@@ -5,6 +5,7 @@ import 'reward_screen.dart';
 import 'games/games.dart';
 import '../../services/simple_auth_service.dart';
 import '../../models/app_user.dart';
+import 'mood_detection.dart';
 
 class ChildDashboard extends StatefulWidget {
   const ChildDashboard({Key? key}) : super(key: key);
@@ -41,6 +42,13 @@ class _ChildDashboardState extends State<ChildDashboard>
       description: "Audio learning",
       color: const Color(0xFFE17055),
       lightColor: const Color(0xFFFAB1A0),
+    ),
+    ModernTileData(
+      icon: Icons.mood_rounded,
+      title: "Mood",
+      description: "Detect your mood",
+      color: const Color(0xFF0984E3),
+      lightColor: const Color(0xFF74B9FF),
     ),
     ModernTileData(
       icon: Icons.stars_rounded,
@@ -302,6 +310,12 @@ class _ChildDashboardState extends State<ChildDashboard>
         Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => RewardScreen()),
+        );
+        break;
+      case 4:
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const MoodDetectionScreen()),
         );
         break;
     }
