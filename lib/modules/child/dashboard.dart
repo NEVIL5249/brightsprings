@@ -303,7 +303,7 @@ class _ChildDashboardState extends State<ChildDashboard>
       case 2:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => SoundLearningScreen()),
+MaterialPageRoute(builder: (_) => LearningSoundsScreen()),
         );
         break;
       case 3:

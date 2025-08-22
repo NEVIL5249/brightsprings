@@ -1,142 +1,165 @@
 import 'package:flutter/material.dart';
-// import 'package:audioplayers/audioplayers.dart'; // Uncomment if you add audioplayers to pubspec.yaml
+import 'package:audioplayers/audioplayers.dart';
 
-// --- NEW: SoundData for specific sound information ---
+/// --- MODEL ---
 class SoundData {
   final String title;
-  final String description; // e.g., "Letter A sound" or "Animal sound"
-  final String audioAssetPath; // Path to audio file in assets
+  final String description;
+  final String audioAssetPath;
+  final bool isLocal; // true for local assets, false for URLs
   final IconData icon;
   final Color primaryColor;
   final Color accentColor;
-  final bool isComingSoon;
 
   SoundData({
     required this.title,
-    this.description = "",
+    required this.description,
     required this.audioAssetPath,
+    this.isLocal = false,
     required this.icon,
     required this.primaryColor,
-    required this.accentColor,
-    this.isComingSoon = false,
-  });
+    Color? accentColor, // make optional
+  }) : accentColor = accentColor ?? primaryColor.withOpacity(0.7);
 }
 
-class SoundLearningScreen extends StatefulWidget {
+/// --- MAIN WIDGET ---
+class LearningSoundsScreen extends StatefulWidget {
+  const LearningSoundsScreen({Key? key}) : super(key: key);
+
   @override
-  _SoundLearningScreenState createState() => _SoundLearningScreenState();
+  State<LearningSoundsScreen> createState() => _LearningSoundsScreenState();
 }
 
-class _SoundLearningScreenState extends State<SoundLearningScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnimation;
-  // late AudioPlayer _audioPlayer; // Uncomment if using audioplayers
+class _LearningSoundsScreenState extends State<LearningSoundsScreen> {
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  String _currentlyPlaying = '';
+  bool _isLoading = false;
 
+  // --- List of sounds with local assets option ---
   final List<SoundData> _sounds = [
     SoundData(
-      title: "A",
-      description: "Letter A sound",
-      audioAssetPath: "assets/audio/letter_a.mp3", // YOUR AUDIO PATH
-      icon: Icons.abc_rounded,
-      primaryColor: const Color(0xFF53A8B6),
-      accentColor: const Color(0xFF76C4D2),
-    ),
-    SoundData(
-      title: "B",
-      description: "Letter B sound",
-      audioAssetPath: "assets/audio/letter_b.mp3", // YOUR AUDIO PATH
-      icon: Icons.abc_rounded,
-      primaryColor: const Color(0xFFC70039),
-      accentColor: const Color(0xFFE84393),
-    ),
-    SoundData(
-      title: "C",
-      description: "Letter C sound",
-      audioAssetPath: "assets/audio/letter_c.mp3", // YOUR AUDIO PATH
-      icon: Icons.abc_rounded,
-      primaryColor: const Color(0xFFFFA500),
-      accentColor: const Color(0xFFFFC14D),
-    ),
-    SoundData(
       title: "Cat",
-      description: "Sound of a Cat",
-      audioAssetPath: "assets/audio/cat_meow.mp3", // YOUR AUDIO PATH
+      description: "Meow sound",
+      audioAssetPath: "sounds/cat_meow.mp3", // Put MP3 file in assets/sounds/
+      isLocal: true,
       icon: Icons.pets_rounded,
-      primaryColor: const Color(0xFF28B463),
-      accentColor: const Color(0xFF58D683),
+      primaryColor: const Color(0xFFE17055), // Coordinated with Games screen
+      accentColor: const Color(0xFFFD79A8), // Coordinated with Games screen
     ),
     SoundData(
       title: "Dog",
-      description: "Sound of a Dog",
-      audioAssetPath: "assets/audio/dog_bark.mp3", // YOUR AUDIO PATH
-      icon: Icons.pets_rounded,
-      primaryColor: const Color(0xFF8E44AD),
-      accentColor: const Color(0xFFBB8FCE),
+      description: "Barking sound",
+      audioAssetPath: "sounds/dog_bark.mp3",
+      isLocal: true,
+      icon: Icons.pets,
+      primaryColor: const Color(0xFF00B894), // Coordinated with Games screen
+      accentColor: const Color(0xFF00CEC9), // Coordinated with Games screen
     ),
     SoundData(
-      title: "Apple",
-      description: "Sound of the word Apple",
-      audioAssetPath: "assets/audio/apple_word.mp3", // YOUR AUDIO PATH
-      icon: Icons.apple_rounded,
-      primaryColor: const Color(0xFFE74C3C),
-      accentColor: const Color(0xFFEC7063),
-    ),
-    SoundData(
-      title: "New Sounds",
-      description: "More sounds coming soon!",
-      audioAssetPath: "", // No audio for coming soon
-      icon: Icons.hourglass_empty_rounded,
-      primaryColor: Colors.grey.shade700,
-      accentColor: Colors.grey.shade500,
-      isComingSoon: true,
+      title: "Bird",
+      description: "Chirping sound",
+      audioAssetPath: "sounds/bird_chirp.mp3",
+      isLocal: true,
+      icon: Icons.flutter_dash,
+      primaryColor: const Color(0xFFFDCB6E), // Coordinated with Games screen
+      accentColor: const Color(0xFFE84393), // Coordinated with Games screen
     ),
   ];
+
+  // Alternative with online URLs
+  final List<SoundData> _onlineSounds = [
+    SoundData(
+      title: "Test Sound 1",
+      description: "Sample audio",
+      audioAssetPath: "https://www.learningcontainer.com/wp-content/uploads/2020/02/Kalimba.mp3",
+      isLocal: false,
+      icon: Icons.music_note,
+      primaryColor: const Color(0xFF667EEA), // Coordinated with Games screen
+      accentColor: const Color(0xFF764BA2), // Coordinated with Games screen
+    ),
+    SoundData(
+      title: "Test Sound 2",
+      description: "Sample music",
+      audioAssetPath: "https://file-examples.com/storage/fe86c86bb6c92b1c59b4dd5/2017/11/file_example_MP3_700KB.mp3",
+      isLocal: false,
+      icon: Icons.audiotrack,
+      primaryColor: const Color(0xFFF39C12),
+      accentColor: const Color(0xFF2E86C1),
+    ),
+  ];
+
+  bool _useLocalAssets = true; // Toggle between local and online
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1200),
-      vsync: this,
-    );
+    _audioPlayer.onPlayerStateChanged.listen((PlayerState state) {
+      if (mounted) {
+        setState(() {
+          if (state != PlayerState.playing) {
+            _currentlyPlaying = '';
+            _isLoading = false;
+          }
+        });
+      }
+    });
 
-    _fadeAnimation = CurvedAnimation(
-      parent: _controller,
-      curve: Curves.easeOutExpo,
-    );
-
-    _controller.forward();
-
-    // Initialize audio player if using audioplayers
-    // _audioPlayer = AudioPlayer();
+    _audioPlayer.onPlayerComplete.listen((event) {
+      if (mounted) {
+        setState(() {
+          _currentlyPlaying = '';
+          _isLoading = false;
+        });
+      }
+    });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
-    // Dispose audio player if using audioplayers
-    // _audioPlayer.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF0D1421), // Dashboard background color
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fadeAnimation,
-          child: Column(
-            children: [
-              _buildModernHeader(),
-              Expanded(child: _buildSoundList()),
-              _buildBottomBar(),
-            ],
+  Future<void> _playAudio(String path, String title, bool isLocal) async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _currentlyPlaying = title;
+      });
+
+      await _audioPlayer.stop();
+
+      if (isLocal) {
+        await _audioPlayer.play(AssetSource(path));
+        debugPrint("Playing local asset: $path");
+      } else {
+        await _audioPlayer.play(UrlSource(path));
+        debugPrint("Playing online audio: $path");
+      }
+    } catch (e) {
+      debugPrint("Audio error: $e");
+      setState(() {
+        _isLoading = false;
+        _currentlyPlaying = '';
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(isLocal
+                ? "Audio file not found: $title\nMake sure to add MP3 files to assets/sounds/"
+                : "Failed to load online audio: $title"),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'OK',
+              textColor: Colors.white,
+              onPressed: () {},
+            ),
           ),
-        ),
-      ),
-    );
+        );
+      }
+    }
   }
 
   Widget _buildModernHeader() {
@@ -149,21 +172,21 @@ class _SoundLearningScreenState extends State<SoundLearningScreen>
             height: 50,
             decoration: BoxDecoration(
               gradient: const LinearGradient(
-                colors: [Color(0xFF0F9D58), Color(0xFF34A853)], // Green gradient for sound/audio
+                colors: [Color(0xFFE17055), Color(0xFFFD79A8)],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF0F9D58).withOpacity(0.3),
+                  color: const Color(0xFFE17055).withOpacity(0.3),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: const Icon( // This can be const
-              Icons.volume_up_rounded, // Icon specific to sound
+            child: const Icon(
+              Icons.volume_up_rounded, // Relevant icon for sounds
               color: Colors.white,
               size: 24,
             ),
@@ -173,8 +196,8 @@ class _SoundLearningScreenState extends State<SoundLearningScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text( // This can be const
-                  "Hear & Learn Sounds!", // Updated header text
+                const Text(
+                  "Learning Sounds 🎶",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -183,8 +206,8 @@ class _SoundLearningScreenState extends State<SoundLearningScreen>
                   ),
                 ),
                 const SizedBox(height: 4),
-                Text( // Cannot be const due to dynamic opacity
-                  "Practice words, letters & more!", // Updated sub-text
+                Text(
+                  "Tap to hear the sounds!",
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.7),
@@ -205,378 +228,176 @@ class _SoundLearningScreenState extends State<SoundLearningScreen>
                 width: 1,
               ),
             ),
-            child: Icon( // Cannot be const due to dynamic opacity
-              Icons.search_rounded, // Example: search sounds
-              color: Colors.white.withOpacity(0.8),
-              size: 20,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSoundList() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-      child: ListView.builder(
-        itemCount: _sounds.length,
-        itemBuilder: (context, index) {
-          final sound = _sounds[index];
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 16.0),
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                double delay = index * 0.08;
-                double animationValue = Curves.easeOutExpo.transform(
-                  ((_controller.value - delay).clamp(0.0, 1.0) / (1.0 - delay))
-                      .clamp(0.0, 1.0),
-                );
-
-                return Transform.translate(
-                  offset: Offset(0, 30 * (1 - animationValue)),
-                  child: Opacity(
-                    opacity: animationValue,
-                    child: SoundCard(
-                      sound: sound,
-                      onTap: () => _handleSoundTap(context, sound),
-                    ),
-                  ),
-                );
+            child: IconButton(
+              icon: Icon(
+                _useLocalAssets ? Icons.cloud_upload_rounded : Icons.folder_rounded,
+                color: Colors.white.withOpacity(0.8),
+                size: 20,
+              ),
+              onPressed: () {
+                setState(() {
+                  _useLocalAssets = !_useLocalAssets;
+                  _audioPlayer.stop();
+                  _currentlyPlaying = '';
+                });
               },
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildBottomBar() {
-    return Container(
-      margin: const EdgeInsets.all(24),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildBottomBarItem(Icons.home_rounded, "Home", false),
-          _buildBottomBarItem(Icons.arrow_back_rounded, "Back", true,
-              onTap: () => Navigator.pop(context)),
-          _buildBottomBarItem(Icons.category_rounded, "Categories", false,
-              onTap: () => _showComingSoonDialog(context, "Categories")),
-          _buildBottomBarItem(Icons.favorite_rounded, "Favorites", false,
-              onTap: () => _showComingSoonDialog(context, "Favorites")),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBottomBarItem(IconData icon, String label, bool isActive,
-      {VoidCallback? onTap}) {
+  // Widget _buildInfoBanner() {
+  //   return Container(
+  //     margin: const EdgeInsets.symmetric(horizontal: 24),
+  //     padding: const EdgeInsets.all(20),
+      
+  //   );
+  // }
+
+  Widget _buildSoundCard(SoundData sound, int index) {
+    final isPlaying = _currentlyPlaying == sound.title;
+    final isThisLoading = _isLoading && _currentlyPlaying == sound.title;
+
     return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: isActive
-                  ? Colors.white.withOpacity(0.2)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon( // Cannot be const due to dynamic `icon` and `isActive`
-              icon,
-              color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-              size: 20,
-            ),
+      onTap: () => _playAudio(sound.audioAssetPath, sound.title, sound.isLocal),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        margin: const EdgeInsets.only(bottom: 16),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              isPlaying ? sound.primaryColor.withOpacity(0.9) : sound.primaryColor,
+              isPlaying ? sound.accentColor.withOpacity(0.9) : sound.accentColor,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          const SizedBox(height: 4),
-          Text( // Cannot be const due to dynamic `isActive`
-            label,
-            style: TextStyle(
-              fontSize: 10,
-              color: isActive ? Colors.white : Colors.white.withOpacity(0.6),
-              fontWeight: FontWeight.w600,
+          borderRadius: BorderRadius.circular(20), // Consistent border radius
+          boxShadow: [
+            BoxShadow(
+              color: sound.primaryColor.withOpacity(isPlaying ? 0.4 : 0.2),
+              blurRadius: isPlaying ? 20 : 10,
+              offset: Offset(0, isPlaying ? 10 : 5),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _handleSoundTap(BuildContext context, SoundData sound) {
-    if (sound.isComingSoon || sound.audioAssetPath.isEmpty) {
-      _showComingSoonDialog(context, "Sound");
-    } else {
-      // Logic to play sound
-      _playAudio(sound.audioAssetPath);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Playing: ${sound.title}", style: const TextStyle(color: Colors.white)),
-          backgroundColor: sound.primaryColor,
-          duration: const Duration(seconds: 1),
+          ],
         ),
-      );
-    }
-  }
-
-  // Function to play audio (placeholder)
-  void _playAudio(String assetPath) async {
-    // If you uncommented audioplayers, you can use:
-    // await _audioPlayer.play(AssetSource(assetPath));
-    print("Attempting to play audio from: $assetPath");
-  }
-
-  void _showComingSoonDialog(BuildContext context, String type) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: Colors.transparent,
-          child: Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A2332), // Dashboard dialog color
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.1),
-                width: 1,
+        child: Row(
+          children: [
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                sound.icon,
+                color: Colors.white,
+                size: isPlaying ? 36 : 32,
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 60,
-                  height: 60,
-                  decoration: BoxDecoration(
-                    color: Colors.orange.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon( // This can be const
-                    Icons.access_time_rounded,
-                    color: Colors.orange,
-                    size: 30,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text( // Cannot be const because of dynamic type string
-                  "🚀 $type Coming Soon!",
-                  textAlign: TextAlign.center,
-                  style: const TextStyle( // TextStyle itself can be const
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text( // Cannot be const due to dynamic opacity and type string
-                  "We're working on more exciting $type for you! Stay tuned! 🌟",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF6C5CE7), // Consistent button color
-                    foregroundColor: Colors.white,
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    sound.title,
+                    style: TextStyle(
+                      fontSize: isPlaying ? 22 : 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
                     ),
                   ),
-                  child: const Text( // This can be const
-                    "Got it! 👍",
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  const SizedBox(height: 4),
+                  Text(
+                    sound.description,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                    ),
                   ),
-                ),
-              ],
+                  if (sound.isLocal) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(Icons.folder, color: Colors.white60, size: 12),
+                        SizedBox(width: 4),
+                        Text(
+                          "Local asset",
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.white60,
+                            fontStyle: FontStyle.italic,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (isPlaying) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      "Now playing...",
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.white,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-        );
-      },
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: isThisLoading
+                  ? const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                  : Icon(
+                      isPlaying ? Icons.pause_circle_filled_rounded : Icons.play_circle_filled_rounded,
+                      color: Colors.white,
+                      size: 38,
+                    ),
+            ),
+          ],
+        ),
+      ),
     );
-  }
-}
-
-// --- NEW: SoundCard Widget for individual sound list items ---
-class SoundCard extends StatefulWidget {
-  final SoundData sound;
-  final VoidCallback onTap;
-
-  const SoundCard({
-    Key? key,
-    required this.sound,
-    required this.onTap,
-  }) : super(key: key);
-
-  @override
-  _SoundCardState createState() => _SoundCardState();
-}
-
-class _SoundCardState extends State<SoundCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _hoverController;
-  late Animation<double> _scaleAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-    _hoverController = AnimationController(
-      duration: const Duration(milliseconds: 150),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween<double>(
-      begin: 1.0,
-      end: 0.98, // Subtle scale effect
-    ).animate(CurvedAnimation(
-      parent: _hoverController,
-      curve: Curves.easeInOut,
-    ));
-  }
-
-  @override
-  void dispose() {
-    _hoverController.dispose();
-    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _scaleAnimation,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: GestureDetector(
-            onTapDown: (_) => _hoverController.forward(),
-            onTapUp: (_) {
-              _hoverController.reverse();
-              widget.onTap(); // Execute the tap action
-            },
-            onTapCancel: () => _hoverController.reverse(),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.05), // Dark transparent background
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.1),
-                  width: 1,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.2),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Sound Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: LinearGradient(
-                        colors: [widget.sound.primaryColor, widget.sound.accentColor],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: widget.sound.primaryColor.withOpacity(0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Icon( // Cannot be const due to dynamic widget.sound.icon
-                      widget.sound.icon,
-                      color: Colors.white,
-                      size: 40,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // Sound Info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text( // Cannot be const due to dynamic widget.sound.title
-                          widget.sound.title,
-                          style: const TextStyle( // TextStyle itself can be const
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Text( // Cannot be const due to dynamic widget.sound.description and widget.sound.isComingSoon
-                          widget.sound.isComingSoon
-                              ? "Stay tuned for more!"
-                              : widget.sound.description,
-                          style: TextStyle( // TextStyle itself can be const
-                            fontSize: 14,
-                            color: Colors.white.withOpacity(0.7),
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        if (widget.sound.isComingSoon) ...[
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            child: const Text( // This can be const
-                              "New Sound Coming",
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon( // Cannot be const due to dynamic opacity
-                    Icons.play_arrow_rounded, // Play icon
-                    color: Colors.white.withOpacity(0.8),
-                    size: 24,
-                  ),
-                ],
+    final currentSounds = _useLocalAssets ? _sounds : _onlineSounds;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0D1421),
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildModernHeader(),
+            const SizedBox(height: 20),
+            const SizedBox(height: 30),
+            Expanded(
+              child: ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                itemCount: currentSounds.length,
+                itemBuilder: (context, index) {
+                  return _buildSoundCard(currentSounds[index], index);
+                },
               ),
             ),
-          ),
-        );
-      },
+          ],
+        ),
+      ),
     );
   }
 }
