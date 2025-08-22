@@ -3,6 +3,7 @@ import 'learning_videos.dart';
 import 'sound_learning.dart';
 import 'reward_screen.dart';
 import 'games/games.dart';
+import '../../services/auth_service.dart';
 
 class ChildDashboard extends StatefulWidget {
   final String childName;
@@ -17,6 +18,7 @@ class _ChildDashboardState extends State<ChildDashboard>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  final AuthService _authService = AuthService();
 
   final List<ModernTileData> _tiles = [
     ModernTileData(
@@ -368,9 +370,10 @@ class _ChildDashboardState extends State<ChildDashboard>
                 const SizedBox(width: 12),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
+                    onPressed: () async {
                       Navigator.of(context).pop();
-                      Navigator.popUntil(context, (route) => route.isFirst);
+                      await _authService.signOut();
+                      Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.red,

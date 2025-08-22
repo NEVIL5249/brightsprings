@@ -3,7 +3,8 @@ import 'patient_list.dart';
 import 'connect.dart';
 import 'assign_task.dart';
 import 'research_articles.dart';
-import 'patient_reports.dart'; // <--- ADD THIS IMPORT
+import 'patient_reports.dart'; 
+import '../../services/auth_service.dart';
 
 class PsychologistDashboard extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _PsychologistDashboardState extends State<PsychologistDashboard>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  final AuthService _authService = AuthService();
 
   final List<PsychologistTileData> _tiles = [
     PsychologistTileData(
@@ -372,9 +374,10 @@ class _PsychologistDashboardState extends State<PsychologistDashboard>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(context).pop();
-                          Navigator.popUntil(context, (route) => route.isFirst);
+                          await _authService.signOut();
+                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,

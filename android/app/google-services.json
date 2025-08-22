@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299366553696",
+    "project_id": "brightsprings-a5e31",
+    "storage_bucket": "brightsprings-a5e31.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299366553696:android:c25516843c41815bbd8b05",
+        "android_client_info": {
+          "package_name": "com.example.brightsprings_ads"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBD4fM8ehJCD9I6q5Zk1i0qVoCwuqY3vn4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,6 +4,7 @@ import 'video_call.dart';
 import 'videos.dart';
 import 'reports.dart';
 import 'guide.dart';
+import '../../services/auth_service.dart';
 
 class ParentDashboard extends StatefulWidget {
   @override
@@ -14,6 +15,7 @@ class _ParentDashboardState extends State<ParentDashboard>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
+  final AuthService _authService = AuthService();
 
   final List<ParentTileData> _tiles = [
     ParentTileData(
@@ -447,9 +449,10 @@ class _ParentDashboardState extends State<ParentDashboard>
                     const SizedBox(width: 12),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: () async {
                           Navigator.of(context).pop();
-                          Navigator.popUntil(context, (route) => route.isFirst);
+                          await _authService.signOut();
+                          Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.red,
