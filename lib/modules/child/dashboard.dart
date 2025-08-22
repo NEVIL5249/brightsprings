@@ -3,12 +3,11 @@ import 'learning_videos.dart';
 import 'sound_learning.dart';
 import 'reward_screen.dart';
 import 'games/games.dart';
-import '../../services/auth_service.dart';
+import '../../services/simple_auth_service.dart';
+import '../../models/app_user.dart';
 
 class ChildDashboard extends StatefulWidget {
-  final String childName;
-
-  const ChildDashboard({Key? key, this.childName = "Zaid"}) : super(key: key);
+  const ChildDashboard({Key? key}) : super(key: key);
 
   @override
   _ChildDashboardState createState() => _ChildDashboardState();
@@ -18,7 +17,8 @@ class _ChildDashboardState extends State<ChildDashboard>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _fadeAnimation;
-  final AuthService _authService = AuthService();
+  AppUser? currentUser;
+  String childName = "Child";
 
   final List<ModernTileData> _tiles = [
     ModernTileData(
@@ -64,7 +64,22 @@ class _ChildDashboardState extends State<ChildDashboard>
       curve: Curves.easeOutExpo,
     );
 
+    _loadUserData();
     _controller.forward();
+  }
+
+  Future<void> _loadUserData() async {
+    try {
+      final user = await SimpleAuthService.getCurrentAppUser();
+      if (user != null) {
+        setState(() {
+          currentUser = user;
+          childName = user.name.isNotEmpty ? user.name : "Child";
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   @override
@@ -127,7 +142,7 @@ class _ChildDashboardState extends State<ChildDashboard>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Hi ${widget.childName}! ✨",
+                  "Hi $childName! ✨",
                   style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w700,
@@ -372,7 +387,7 @@ class _ChildDashboardState extends State<ChildDashboard>
                   child: ElevatedButton(
                     onPressed: () async {
                       Navigator.of(context).pop();
-                      await _authService.signOut();
+                      await SimpleAuthService.signOut();
                       Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);
                     },
                     style: ElevatedButton.styleFrom(
