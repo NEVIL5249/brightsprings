@@ -341,7 +341,7 @@ class _ParentDashboardState extends State<ParentDashboard>
       case 0:
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (_) => AppointmentScreen()),
+          MaterialPageRoute(builder: (_) => AppointmentsPage()),
         );
         break;
       case 1:
