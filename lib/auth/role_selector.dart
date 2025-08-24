@@ -8,7 +8,7 @@ class RoleSelectorScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text('Autism Support App'),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.lightBlueAccent,
         foregroundColor: Colors.white,
       ),
       body: Container(
@@ -16,7 +16,7 @@ class RoleSelectorScreen extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [Colors.deepPurple.shade50, Colors.white],
+            colors: [Colors.white, Colors.white],
           ),
         ),
         child: SafeArea(
@@ -26,17 +26,18 @@ class RoleSelectorScreen extends StatelessWidget {
               child: Column(
                 children: [
                   SizedBox(height: 40),
-                  Icon(
-                    Icons.favorite,
-                    size: 80,
-                    color: Colors.deepPurple,
+                  Image.asset(
+                    'assets/images/brightsprings.png',
+                    width: 150, // adjust size
+                    height: 150,
+                    fit: BoxFit.contain,
                   ),
                   SizedBox(height: 24),
                   Text(
                     'Welcome to BrightSprings',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.deepPurple,
+                      color: Colors.lightBlueAccent,
                     ),
                     textAlign: TextAlign.center,
                   ),
@@ -53,7 +54,7 @@ class RoleSelectorScreen extends StatelessWidget {
                     'Select Your Role',
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Colors.deepPurple,
+                      color: Colors.black,
                     ),
                   ),
                   SizedBox(height: 32),
@@ -119,7 +120,7 @@ class RoleButton extends StatelessWidget {
                 Icon(
                   icon,
                   size: 48,
-                  color: Colors.deepPurple,
+                  color: Colors.black,
                 ),
                 SizedBox(height: 12),
                 Text(
@@ -127,7 +128,7 @@ class RoleButton extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
-                    color: Colors.deepPurple,
+                    color: Colors.black,
                   ),
                 ),
                 SizedBox(height: 4),
